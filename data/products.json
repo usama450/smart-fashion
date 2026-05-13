@@ -1,5 +1,16 @@
 [
   {
+    "id": "1778699092179-89a0jc56mjr",
+    "name": "Hair scrunchie",
+    "category": "Accessories",
+    "price": "499",
+    "description": "Women hair scrunchies",
+    "stock": "In Stock",
+    "image_url": "https://raw.githubusercontent.com/usama450/smart-fashion/master/data/images/1778699091192-eq4vvxx8sxh.jpg",
+    "image_path": "data/images/1778699091192-eq4vvxx8sxh.jpg",
+    "created_at": "2026-05-13T19:04:52.179Z"
+  },
+  {
     "id": "1778698955884-wr5kmgh7d9",
     "name": "Bangles",
     "category": "Accessories",
