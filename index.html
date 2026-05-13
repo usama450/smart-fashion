@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -641,9 +642,28 @@
 </a>
 
 <script>
+/* ═══════════════════════════════════════════════════════════
+   SUPABASE CONFIG
+   After running admin setup, paste your credentials here
+   so the live site can load products for all visitors.
+   ─────────────────────────────────────────────────────────
+   Get these from: supabase.com → Project Settings → API
+═══════════════════════════════════════════════════════════ */
+const SUPABASE_URL      = 'YOUR_SUPABASE_URL';       // e.g. https://abcdef.supabase.co
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';  // starts with eyJ...
+const WA_NUM            = '923000000000';             // ← replace with real WhatsApp number
+
+/* ── INIT ── */
+// Also reads from localStorage so admin device works automatically during setup
+const storedCreds = (() => { try { return JSON.parse(localStorage.getItem('sf_supabase_creds')||'null'); } catch { return null; } })();
+const SB_URL  = storedCreds?.url  || SUPABASE_URL;
+const SB_KEY  = storedCreds?.key  || SUPABASE_ANON_KEY;
+const sbReady = SB_URL !== 'YOUR_SUPABASE_URL';
+const sb      = sbReady ? supabase.createClient(SB_URL, SB_KEY) : null;
+
 /* ── SPARKLES ── */
 const sparklesEl = document.getElementById('sparkles');
-['#D4467A','#C9A227','#8B5CF6','#F07AAC','#E8C050','#FF9CC2'].forEach((c, ci) => {
+['#D4467A','#C9A227','#8B5CF6','#F07AAC','#E8C050','#FF9CC2'].forEach(c => {
   for (let i = 0; i < 5; i++) {
     const el = document.createElement('div');
     el.className = 'sparkle';
@@ -671,40 +691,36 @@ document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 
 /* ── CATEGORY FILTER ── */
 let activeCategory = 'all';
+let allProducts    = []; // cached from last fetch
+
 document.querySelectorAll('.cat-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeCategory = btn.dataset.cat;
-    renderProducts();
+    renderProducts(allProducts);
   });
 });
 
-/* ── PRODUCTS ── */
+/* ── HELPERS ── */
 const EMOJI_MAP = { Mask:'🎭', Hair:'💇', 'Water Bottle':'💧', Organiser:'🗂️', Skincare:'✨', Accessories:'👜', Other:'🛍️' };
-const WA_NUM = '923000000000'; // ← update this to the real WhatsApp number
-
-function getProducts() {
-  try { return JSON.parse(localStorage.getItem('smartfashion_products') || '[]'); }
-  catch { return []; }
-}
 
 function esc(str) {
-  const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML;
+  const d = document.createElement('div'); d.textContent = str||''; return d.innerHTML;
 }
-
 function stockClass(s) {
   if (!s || s === 'In Stock') return 'stock-in';
   if (s === 'Limited') return 'stock-lim';
   return 'stock-out';
 }
 
-function renderProducts() {
+/* ── RENDER ── */
+function renderProducts(products) {
   const grid = document.getElementById('productsGrid');
-  let products = getProducts();
-  if (activeCategory !== 'all') products = products.filter(p => p.category === activeCategory);
+  let list = products || [];
+  if (activeCategory !== 'all') list = list.filter(p => p.category === activeCategory);
 
-  if (!products.length) {
+  if (!list.length) {
     grid.innerHTML = `
       <div class="empty-state">
         <div class="emoji">🛍️</div>
@@ -716,11 +732,13 @@ function renderProducts() {
     return;
   }
 
-  const waMsg = encodeURIComponent(`Hi, I want to order from Smart Fashion! 🛍️`);
-  grid.innerHTML = products.map((p, i) => `
+  const waMsg = encodeURIComponent('Hi, I want to order from Smart Fashion! 🛍️');
+  grid.innerHTML = list.map((p, i) => `
     <div class="product-card reveal" style="transition-delay:${(i%4)*.08}s">
       <div class="product-img-wrap">
-        ${p.image ? `<img src="${p.image}" alt="${esc(p.name)}" loading="lazy"/>` : `<div class="product-emoji">${EMOJI_MAP[p.category]||'🛍️'}</div>`}
+        ${p.image_url
+          ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy"/>`
+          : `<div class="product-emoji">${EMOJI_MAP[p.category]||'🛍️'}</div>`}
       </div>
       <div class="product-body">
         <span class="stock-badge ${stockClass(p.stock)}">${esc(p.stock||'In Stock')}</span>
@@ -740,8 +758,59 @@ function renderProducts() {
   grid.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 }
 
-renderProducts();
-window.addEventListener('storage', e => { if (e.key === 'smartfashion_products') renderProducts(); });
+/* ── LOADING SKELETON ── */
+function showSkeleton() {
+  const grid = document.getElementById('productsGrid');
+  grid.innerHTML = Array(4).fill(`
+    <div class="product-card">
+      <div style="width:100%;aspect-ratio:1;background:linear-gradient(90deg,#F5E0EA 25%,#FDF0F5 50%,#F5E0EA 75%);background-size:200% 100%;animation:shimmer 1.4s infinite"></div>
+      <div style="padding:1rem">
+        <div style="height:10px;width:50%;border-radius:4px;margin-bottom:.6rem;background:linear-gradient(90deg,#F5E0EA 25%,#FDF0F5 50%,#F5E0EA 75%);background-size:200% 100%;animation:shimmer 1.4s infinite"></div>
+        <div style="height:14px;width:80%;border-radius:4px;margin-bottom:.5rem;background:linear-gradient(90deg,#F5E0EA 25%,#FDF0F5 50%,#F5E0EA 75%);background-size:200% 100%;animation:shimmer 1.4s infinite"></div>
+        <div style="height:10px;width:40%;border-radius:4px;background:linear-gradient(90deg,#F5E0EA 25%,#FDF0F5 50%,#F5E0EA 75%);background-size:200% 100%;animation:shimmer 1.4s infinite"></div>
+      </div>
+    </div>`).join('');
+}
+
+/* ── LOAD FROM SUPABASE ── */
+async function loadProducts() {
+  if (!sb) {
+    // Supabase not configured yet — show empty state
+    renderProducts([]);
+    return;
+  }
+
+  showSkeleton();
+
+  const { data, error } = await sb
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Failed to load products:', error.message);
+    renderProducts([]);
+    return;
+  }
+
+  allProducts = data || [];
+  renderProducts(allProducts);
+}
+
+// Add shimmer animation to document
+const shimmerStyle = document.createElement('style');
+shimmerStyle.textContent = '@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}';
+document.head.appendChild(shimmerStyle);
+
+// Initial load
+loadProducts();
+
+// Real-time: when admin adds/deletes a product, page updates live
+if (sb) {
+  sb.channel('products-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadProducts())
+    .subscribe();
+}
 
 /* ── CONTACT FORM ── */
 function submitContactForm() {
@@ -750,14 +819,8 @@ function submitContactForm() {
   const subject = document.getElementById('cf-subject').value;
   const message = document.getElementById('cf-message').value.trim();
 
-  if (!name || !email || !message) {
-    alert('Please fill in Name, Email, and Message.');
-    return;
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    alert('Please enter a valid email address.');
-    return;
-  }
+  if (!name || !email || !message) { alert('Please fill in Name, Email, and Message.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Please enter a valid email address.'); return; }
 
   /* Update the email below to the real business email */
   const mailto = `mailto:smartfashion330@gmail.com?subject=${encodeURIComponent('[Smart Fashion] ' + subject)}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`)}`;

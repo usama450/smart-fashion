@@ -4,276 +4,213 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Smart Fashion</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --rose:    #D4467A;
-      --rose-lt: #F07AAC;
-      --rose-dk: #A03060;
-      --gold:    #C9A227;
-      --cream:   #FDF7F2;
-      --white:   #FFFFFF;
-      --dark:    #2C1320;
-      --border:  #F0D5E0;
-      --muted:   #9B7A8A;
-      --text:    #4A2535;
-      --card:    #FFFFFF;
-      --success: #22C55E;
-      --danger:  #EF4444;
-      --bg:      #FDF0F5;
+      --rose:    #D4467A; --rose-lt: #F07AAC; --rose-dk: #A03060;
+      --gold:    #C9A227; --cream: #FDF7F2; --white: #FFFFFF;
+      --dark:    #2C1320; --border: #F0D5E0; --muted: #9B7A8A;
+      --text:    #4A2535; --bg: #FDF0F5;
+      --success: #22C55E; --danger: #EF4444;
     }
-
     html { scroll-behavior: smooth; }
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
+    body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    /* ── LOGIN SCREEN ── */
-    .login-screen {
-      min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(145deg, #FDE8F2 0%, #FDF7F2 50%, #EDE0FF 100%);
-      padding: 1.5rem;
+    /* ── SETUP SCREEN ── */
+    .setup-screen {
+      display: none; position: fixed; inset: 0; z-index: 2000;
+      background: linear-gradient(145deg,#FDE8F2,#FDF7F2 50%,#EDE0FF);
+      overflow-y: auto; padding: 2rem 1.5rem;
     }
-    .login-card {
-      background: var(--white);
-      border-radius: 24px;
-      padding: 3rem 2.5rem;
-      width: 100%; max-width: 420px;
-      box-shadow: 0 20px 60px rgba(212,70,122,0.15);
-      border: 1px solid var(--border);
-      text-align: center;
+    .setup-screen.show { display: block; }
+    .setup-card {
+      background: var(--white); border-radius: 24px; padding: 2.5rem;
+      max-width: 680px; margin: 0 auto;
+      box-shadow: 0 20px 60px rgba(212,70,122,.15); border: 1px solid var(--border);
     }
-    .login-logo {
-      font-size: 1.5rem; font-weight: 700; color: var(--dark);
-      margin-bottom: 0.4rem;
-    }
+    .setup-card h1 { font-size: 1.4rem; font-weight: 700; color: var(--dark); margin-bottom: .4rem; }
+    .setup-card .sub { font-size: .88rem; color: var(--muted); margin-bottom: 2rem; }
+    .step-block { margin-bottom: 2rem; }
+    .step-block h3 { font-size: .95rem; font-weight: 700; color: var(--dark); margin-bottom: .6rem; display: flex; align-items: center; gap: .5rem; }
+    .step-num-sm { width: 26px; height: 26px; background: var(--rose); color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; flex-shrink: 0; }
+    .step-block p { font-size: .84rem; color: var(--muted); line-height: 1.7; margin-bottom: .5rem; }
+    .step-block a { color: var(--rose); }
+    .code-box { background: #1C0D1A; color: #F07AAC; font-family: monospace; font-size: .78rem; padding: 1rem; border-radius: 10px; margin: .6rem 0; line-height: 1.7; overflow-x: auto; white-space: pre; }
+    .field { margin-bottom: 1.1rem; }
+    .field label { display: block; font-size: .8rem; font-weight: 600; color: var(--text); margin-bottom: .4rem; }
+    .field input { width: 100%; padding: .72rem 1rem; border: 1.5px solid var(--border); border-radius: 12px; font-family: 'Poppins', sans-serif; font-size: .87rem; color: var(--text); background: var(--white); outline: none; transition: border-color .2s, box-shadow .2s; }
+    .field input:focus { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(212,70,122,.1); }
+    .setup-error { display: none; background: #FFF0F0; color: var(--danger); border: 1px solid #FECACA; border-radius: 10px; padding: .6rem 1rem; font-size: .82rem; margin-bottom: 1rem; }
+    .setup-error.show { display: block; }
+
+    /* ── LOGIN ── */
+    .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg,#FDE8F2,#FDF7F2 50%,#EDE0FF); padding: 1.5rem; }
+    .login-card { background: var(--white); border-radius: 24px; padding: 3rem 2.5rem; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(212,70,122,.15); border: 1px solid var(--border); text-align: center; }
+    .login-logo { font-size: 1.5rem; font-weight: 700; color: var(--dark); margin-bottom: .4rem; }
     .login-logo span { color: var(--rose); }
-    .login-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 2.5rem; }
+    .login-sub { font-size: .82rem; color: var(--muted); margin-bottom: 2.5rem; }
     .login-icon { font-size: 3rem; margin-bottom: 1.5rem; }
-
-    .field { margin-bottom: 1.2rem; text-align: left; }
-    .field label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.45rem; }
-    .field input, .field select, .field textarea {
-      width: 100%; padding: 0.75rem 1rem;
-      border: 1.5px solid var(--border); border-radius: 12px;
-      font-family: 'Poppins', sans-serif; font-size: 0.88rem; color: var(--text);
-      background: var(--white); outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .field input:focus, .field select:focus, .field textarea:focus {
-      border-color: var(--rose);
-      box-shadow: 0 0 0 3px rgba(212,70,122,0.12);
-    }
-    .field textarea { resize: vertical; min-height: 80px; }
+    .login-error { display: none; background: #FFF0F0; color: var(--danger); border: 1px solid #FECACA; border-radius: 10px; padding: .6rem 1rem; font-size: .82rem; margin-bottom: 1rem; }
+    .login-error.show { display: block; }
     .pw-wrap { position: relative; }
     .pw-wrap input { padding-right: 2.8rem; }
-    .pw-toggle {
-      position: absolute; right: 0.9rem; top: 50%; transform: translateY(-50%);
-      background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1.1rem;
-      padding: 0; line-height: 1;
-    }
-
-    .login-error {
-      background: #FFF0F0; color: var(--danger);
-      border: 1px solid #FECACA; border-radius: 10px;
-      padding: 0.6rem 1rem; font-size: 0.82rem; margin-bottom: 1rem;
-      display: none;
-    }
-    .login-error.show { display: block; }
+    .pw-toggle { position: absolute; right: .9rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; padding: 0; }
 
     /* ── BUTTONS ── */
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-      padding: 0.78rem 1.6rem; border-radius: 50px;
-      font-family: 'Poppins', sans-serif; font-size: 0.88rem; font-weight: 600;
-      cursor: pointer; border: none; text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-    }
-    .btn-rose {
-      background: linear-gradient(135deg, var(--rose), var(--rose-dk));
-      color: #fff;
-      box-shadow: 0 4px 18px rgba(212,70,122,0.28);
-    }
-    .btn-rose:hover { transform: translateY(-1px); box-shadow: 0 7px 24px rgba(212,70,122,0.42); }
-    .btn-ghost {
-      background: transparent; color: var(--muted);
-      border: 1.5px solid var(--border);
-    }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .78rem 1.6rem; border-radius: 50px; font-family: 'Poppins', sans-serif; font-size: .88rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: transform .2s, box-shadow .2s, background .2s; }
+    .btn-rose { background: linear-gradient(135deg, var(--rose), var(--rose-dk)); color: #fff; box-shadow: 0 4px 18px rgba(212,70,122,.28); }
+    .btn-rose:hover { transform: translateY(-1px); box-shadow: 0 7px 24px rgba(212,70,122,.42); }
+    .btn-rose:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
     .btn-ghost:hover { border-color: var(--rose); color: var(--rose); }
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-danger:hover { background: #DC2626; transform: translateY(-1px); }
     .btn-full { width: 100%; }
-    .btn-sm { padding: 0.38rem 0.85rem; font-size: 0.76rem; border-radius: 50px; }
+    .btn-sm { padding: .38rem .85rem; font-size: .76rem; border-radius: 50px; }
 
     /* ── ADMIN SHELL ── */
     #adminShell { display: none; min-height: 100vh; }
     #adminShell.visible { display: block; }
-
-    .admin-header {
-      background: var(--white);
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 1.5rem;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 100;
-      box-shadow: 0 2px 16px rgba(212,70,122,0.07);
-    }
+    .admin-header { background: var(--white); border-bottom: 1px solid var(--border); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 16px rgba(212,70,122,.07); }
     .admin-brand { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
     .admin-brand span { color: var(--rose); }
-    .admin-brand small { font-size: 0.7rem; color: var(--muted); font-weight: 400; margin-left: 0.5rem; }
-    .header-actions { display: flex; gap: 0.6rem; align-items: center; }
-
+    .admin-brand small { font-size: .7rem; color: var(--muted); font-weight: 400; margin-left: .5rem; }
+    .header-actions { display: flex; gap: .6rem; align-items: center; }
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; display: inline-block; margin-right: .3rem; animation: syncPulse 2s infinite; }
+    .sync-dot.error { background: var(--danger); animation: none; }
+    @keyframes syncPulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
     .admin-body { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
 
-    /* ── STATS BAR ── */
-    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
-    .stat-card {
-      background: var(--white); border-radius: 16px; padding: 1.2rem 1.4rem;
-      border: 1px solid var(--border);
-      display: flex; align-items: center; gap: 1rem;
-    }
+    /* ── STATS ── */
+    .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--white); border-radius: 16px; padding: 1.2rem 1.4rem; border: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; }
     .stat-icon { font-size: 1.8rem; }
     .stat-num { font-size: 1.5rem; font-weight: 700; color: var(--dark); line-height: 1; }
-    .stat-lbl { font-size: 0.74rem; color: var(--muted); margin-top: 0.2rem; }
+    .stat-lbl { font-size: .74rem; color: var(--muted); margin-top: .2rem; }
 
     /* ── UPLOAD CARD ── */
-    .upload-card {
-      background: var(--white); border-radius: 20px;
-      border: 1px solid var(--border); padding: 2rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 20px rgba(212,70,122,0.06);
-    }
-    .card-title { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
-
-    /* Image upload area */
-    .img-upload-area {
-      border: 2px dashed var(--border); border-radius: 16px;
-      background: var(--bg);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 2.5rem 1.5rem; text-align: center; cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      position: relative; overflow: hidden;
-      min-height: 200px;
-    }
-    .img-upload-area:hover, .img-upload-area.dragover {
-      border-color: var(--rose);
-      background: rgba(212,70,122,0.04);
-    }
-    .img-upload-area input[type="file"] {
-      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-    }
-    .upload-icon { font-size: 2.8rem; margin-bottom: 0.8rem; }
-    .upload-text { font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem; }
-    .upload-hint { font-size: 0.76rem; color: var(--muted); }
+    .upload-card { background: var(--white); border-radius: 20px; border: 1px solid var(--border); padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(212,70,122,.06); }
+    .card-title { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 1.5rem; display: flex; align-items: center; gap: .5rem; }
+    .img-upload-area { border: 2px dashed var(--border); border-radius: 16px; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2.5rem 1.5rem; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; position: relative; overflow: hidden; min-height: 200px; }
+    .img-upload-area:hover, .img-upload-area.dragover { border-color: var(--rose); background: rgba(212,70,122,.04); }
+    .img-upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-icon { font-size: 2.8rem; margin-bottom: .8rem; }
+    .upload-text { font-size: .9rem; font-weight: 600; color: var(--text); margin-bottom: .3rem; }
+    .upload-hint { font-size: .76rem; color: var(--muted); }
     .upload-hint span { color: var(--rose); font-weight: 600; }
-
-    /* Mobile camera buttons */
-    .mobile-upload-btns {
-      display: none;
-      gap: 0.75rem; margin-top: 1rem;
-    }
-    @media (max-width: 600px) { .mobile-upload-btns { display: flex; flex-wrap: wrap; } }
-
-    /* Preview */
-    .img-preview-wrap {
-      display: none; position: relative; border-radius: 16px; overflow: hidden;
-      aspect-ratio: 1; max-width: 280px; margin: 0 auto;
-    }
+    .mobile-btns { display: none; gap: .75rem; margin-top: 1rem; flex-wrap: wrap; }
+    @media (max-width: 600px) { .mobile-btns { display: flex; } }
+    .img-preview-wrap { display: none; position: relative; border-radius: 16px; overflow: hidden; aspect-ratio: 1; max-width: 280px; margin: 0 auto; }
     .img-preview-wrap.show { display: block; }
     .img-preview-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .img-remove {
-      position: absolute; top: 0.5rem; right: 0.5rem;
-      background: rgba(0,0,0,0.65); color: #fff;
-      border: none; border-radius: 50%; width: 32px; height: 32px;
-      cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;
-      transition: background 0.2s;
-    }
+    .img-remove { position: absolute; top: .5rem; right: .5rem; background: rgba(0,0,0,.65); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: background .2s; }
     .img-remove:hover { background: var(--danger); }
-
-    /* Form grid */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .form-grid .field.full { grid-column: 1 / -1; }
-    @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } .form-grid .field.full { grid-column: 1; } }
+    .form-grid .full { grid-column: 1/-1; }
+    @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } .form-grid .full { grid-column: 1; } }
+    .cf { margin-bottom: 0; }
+    .cf label { display: block; font-size: .8rem; font-weight: 600; color: var(--text); margin-bottom: .4rem; }
+    .cf input, .cf select, .cf textarea { width: 100%; padding: .72rem 1rem; border: 1.5px solid var(--border); border-radius: 12px; font-family: 'Poppins', sans-serif; font-size: .88rem; color: var(--text); background: var(--white); outline: none; transition: border-color .2s, box-shadow .2s; }
+    .cf input:focus, .cf select:focus, .cf textarea:focus { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(212,70,122,.1); }
+    .cf textarea { resize: vertical; min-height: 80px; }
+    .char-count { font-size: .7rem; color: var(--muted); text-align: right; margin-top: .2rem; }
 
-    /* Char counter */
-    .char-counter { font-size: 0.7rem; color: var(--muted); text-align: right; margin-top: 0.25rem; }
+    /* Upload progress */
+    .upload-progress { display: none; background: rgba(212,70,122,.08); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+    .upload-progress.show { display: block; }
+    .progress-bar-wrap { background: var(--border); border-radius: 50px; height: 6px; margin-top: .6rem; }
+    .progress-bar { background: linear-gradient(90deg, var(--rose), var(--rose-dk)); border-radius: 50px; height: 100%; width: 0%; transition: width .3s; }
+    .progress-text { font-size: .8rem; color: var(--muted); }
+
+    /* ── PRODUCTS LIST ── */
+    .products-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+    .prod-item { background: var(--white); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; transition: box-shadow .2s; }
+    .prod-item:hover { box-shadow: 0 6px 20px rgba(212,70,122,.12); }
+    .prod-img { width: 100%; aspect-ratio: 1; object-fit: cover; background: linear-gradient(135deg,#FDE8F2,#F0E0FF); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+    .prod-img img { width: 100%; height: 100%; object-fit: cover; }
+    .prod-info { padding: .75rem; }
+    .prod-cat  { font-size: .66rem; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--rose); margin-bottom: .2rem; }
+    .prod-name { font-size: .85rem; font-weight: 600; color: var(--dark); margin-bottom: .2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .prod-price { font-size: .82rem; color: var(--rose); font-weight: 700; }
+    .prod-actions { display: flex; gap: .4rem; margin-top: .6rem; }
+    .empty-list { text-align: center; padding: 3rem 1rem; color: var(--muted); grid-column: 1/-1; }
+    .empty-list .e-icon { font-size: 3rem; margin-bottom: .8rem; }
 
     /* ── TOAST ── */
-    .toast {
-      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(100px);
-      background: var(--dark); color: #fff;
-      padding: 0.75rem 1.5rem; border-radius: 50px;
-      font-size: 0.85rem; font-weight: 500;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-      transition: transform 0.35s cubic-bezier(.22,.68,0,1.2), opacity 0.35s;
-      opacity: 0; z-index: 9999;
-      display: flex; align-items: center; gap: 0.5rem;
-      white-space: nowrap;
-    }
+    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--dark); color: #fff; padding: .75rem 1.5rem; border-radius: 50px; font-size: .85rem; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.2); transition: transform .35s cubic-bezier(.22,.68,0,1.2), opacity .35s; opacity: 0; z-index: 9999; display: flex; align-items: center; gap: .5rem; white-space: nowrap; }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     .toast.success { background: #16A34A; }
     .toast.error   { background: var(--danger); }
 
-    /* ── PRODUCTS LIST ── */
-    .products-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
-    .prod-item {
-      background: var(--white); border-radius: 16px;
-      border: 1px solid var(--border); overflow: hidden;
-      transition: box-shadow 0.2s;
-    }
-    .prod-item:hover { box-shadow: 0 6px 20px rgba(212,70,122,0.12); }
-    .prod-img {
-      width: 100%; aspect-ratio: 1; object-fit: cover;
-      background: linear-gradient(135deg, #FDE8F2, #F0E0FF);
-      display: flex; align-items: center; justify-content: center; font-size: 2.5rem;
-    }
-    .prod-img img { width: 100%; height: 100%; object-fit: cover; }
-    .prod-info { padding: 0.75rem; }
-    .prod-cat  { font-size: 0.66rem; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--rose); margin-bottom: 0.2rem; }
-    .prod-name { font-size: 0.85rem; font-weight: 600; color: var(--dark); margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .prod-price { font-size: 0.82rem; color: var(--rose); font-weight: 700; }
-    .prod-actions { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
-
-    .empty-list { text-align: center; padding: 3rem 1rem; color: var(--muted); grid-column: 1/-1; }
-    .empty-list .e-icon { font-size: 3rem; margin-bottom: 0.8rem; }
-    .empty-list p { font-size: 0.88rem; }
-
-    /* ── CONFIRM DIALOG ── */
-    .overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      z-index: 9000; display: none; align-items: center; justify-content: center;
-      padding: 1.5rem;
-    }
+    /* ── CONFIRM ── */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 9000; display: none; align-items: center; justify-content: center; padding: 1.5rem; }
     .overlay.open { display: flex; }
-    .dialog {
-      background: var(--white); border-radius: 20px; padding: 2rem;
-      max-width: 380px; width: 100%; text-align: center;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-    }
+    .dialog { background: var(--white); border-radius: 20px; padding: 2rem; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.2); }
     .dialog-icon { font-size: 2.5rem; margin-bottom: 1rem; }
-    .dialog h3 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 0.5rem; }
-    .dialog p  { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
-    .dialog-btns { display: flex; gap: 0.75rem; justify-content: center; }
+    .dialog h3 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: .5rem; }
+    .dialog p  { font-size: .85rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .dialog-btns { display: flex; gap: .75rem; justify-content: center; }
 
-    /* ── SCROLLBAR ── */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    /* ── LOADING ── */
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .skeleton { background: linear-gradient(90deg, #F5E0EA 25%, #FDF0F5 50%, #F5E0EA 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 8px; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
   </style>
 </head>
 <body>
 
-<!-- ── LOGIN SCREEN ── -->
-<div class="login-screen" id="loginScreen">
+<!-- ── SETUP SCREEN (shown when credentials not configured) ── -->
+<div class="setup-screen" id="setupScreen">
+  <div class="setup-card">
+    <div style="font-size:2.5rem;margin-bottom:.8rem">⚙️</div>
+    <h1>One-time Supabase Setup</h1>
+    <p class="sub">Your images now upload to the cloud so everyone sees them. This takes about 5 minutes and is completely free.</p>
+
+    <div class="step-block">
+      <h3><span class="step-num-sm">1</span> Create a free Supabase account</h3>
+      <p>Go to <a href="https://supabase.com" target="_blank">supabase.com</a> → click <strong>Start your project</strong> → sign up with GitHub or email.</p>
+      <p>Then create a new project. Pick any name (e.g. "smart-fashion"). Choose a strong database password and save it somewhere.</p>
+    </div>
+
+    <div class="step-block">
+      <h3><span class="step-num-sm">2</span> Run the database setup SQL</h3>
+      <p>In your Supabase dashboard, go to <strong>SQL Editor → New query</strong>, paste and run the contents of <code>setup.sql</code> (included in your project folder).</p>
+      <p>It creates the products table, enables security, and sets read/write permissions.</p>
+    </div>
+
+    <div class="step-block">
+      <h3><span class="step-num-sm">3</span> Create the image storage bucket</h3>
+      <p>Go to <strong>Storage → New bucket</strong>. Name it exactly: <code>product-images</code>. Toggle <strong>Public bucket</strong> ON. Click Save.</p>
+    </div>
+
+    <div class="step-block">
+      <h3><span class="step-num-sm">4</span> Enter your project credentials below</h3>
+      <p>In Supabase: go to <strong>Project Settings → API</strong>. Copy the <strong>Project URL</strong> and <strong>anon public</strong> key.</p>
+      <div class="setup-error" id="setupError">Please fill in both fields.</div>
+      <div class="field">
+        <label>Supabase Project URL</label>
+        <input type="text" id="setupUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Supabase Anon Key</label>
+        <input type="text" id="setupKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off" />
+      </div>
+      <button class="btn btn-rose btn-full" onclick="saveSetup()">Save & Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOGIN ── -->
+<div class="login-screen" id="loginScreen" style="display:none">
   <div class="login-card">
     <div class="login-icon">🔐</div>
     <div class="login-logo">Smart<span>Fashion</span></div>
-    <div class="login-sub">Admin Panel — Enter password to continue</div>
+    <div class="login-sub">Admin Panel · Enter password to continue</div>
     <div class="login-error" id="loginError">Incorrect password. Please try again.</div>
     <div class="field">
       <label>Password</label>
@@ -283,54 +220,49 @@
       </div>
     </div>
     <button class="btn btn-rose btn-full" onclick="doLogin()">Sign In</button>
-    <p style="font-size:0.72rem;color:var(--muted);margin-top:1.2rem;">
-      Default password: <strong>fashion330</strong>
-    </p>
   </div>
 </div>
 
 <!-- ── ADMIN SHELL ── -->
 <div id="adminShell">
-  <!-- Header -->
   <div class="admin-header">
     <div class="admin-brand">Smart<span>Fashion</span> <small>Admin</small></div>
     <div class="header-actions">
+      <span id="syncStatus"><span class="sync-dot"></span><span style="font-size:.75rem;color:var(--muted)">Connected</span></span>
       <a href="index.html" target="_blank" class="btn btn-ghost btn-sm">View Site ↗</a>
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
 
   <div class="admin-body">
-
-    <!-- Stats -->
-    <div class="stats-row" id="statsRow">
-      <div class="stat-card"><div class="stat-icon">📦</div><div><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Total Products</div></div></div>
-      <div class="stat-card"><div class="stat-icon">📂</div><div><div class="stat-num" id="statCats">0</div><div class="stat-lbl">Categories</div></div></div>
-      <div class="stat-card"><div class="stat-icon">🆕</div><div><div class="stat-num" id="statRecent">0</div><div class="stat-lbl">Added Today</div></div></div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-icon">📦</div><div><div class="stat-num" id="statTotal">—</div><div class="stat-lbl">Total Products</div></div></div>
+      <div class="stat-card"><div class="stat-icon">📂</div><div><div class="stat-num" id="statCats">—</div><div class="stat-lbl">Categories</div></div></div>
+      <div class="stat-card"><div class="stat-icon">🆕</div><div><div class="stat-num" id="statRecent">—</div><div class="stat-lbl">Added Today</div></div></div>
     </div>
 
-    <!-- Upload Form -->
+    <!-- Upload form -->
     <div class="upload-card">
       <div class="card-title">📸 Add New Product</div>
 
-      <!-- Image Upload -->
-      <div class="field">
-        <label>Product Photo</label>
+      <!-- Image area -->
+      <div style="margin-bottom:1.2rem">
+        <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.4rem">Product Photo</label>
         <div class="img-upload-area" id="uploadArea">
           <input type="file" id="fileInput" accept="image/*" />
           <div class="upload-icon">📷</div>
           <div class="upload-text">Tap to choose photo</div>
           <div class="upload-hint">or drag & drop · <span>JPG, PNG, WEBP</span></div>
         </div>
-        <!-- Mobile camera shortcuts (shown on small screens) -->
-        <div class="mobile-upload-btns">
+        <!-- Mobile shortcuts -->
+        <div class="mobile-btns">
           <label class="btn btn-ghost btn-sm" style="cursor:pointer">
-            📷 Take Photo
-            <input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleFileInput(this)" />
+            📷 Camera
+            <input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleFileFrom(this)" />
           </label>
           <label class="btn btn-ghost btn-sm" style="cursor:pointer">
             🖼 Gallery
-            <input type="file" accept="image/*" style="display:none" onchange="handleFileInput(this)" />
+            <input type="file" accept="image/*" style="display:none" onchange="handleFileFrom(this)" />
           </label>
         </div>
         <div class="img-preview-wrap" id="previewWrap">
@@ -339,14 +271,20 @@
         </div>
       </div>
 
-      <!-- Form Fields -->
+      <!-- Upload progress -->
+      <div class="upload-progress" id="uploadProgress">
+        <div class="progress-text" id="progressText">Uploading image...</div>
+        <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      </div>
+
+      <!-- Fields -->
       <div class="form-grid">
-        <div class="field">
+        <div class="cf">
           <label>Product Name *</label>
-          <input type="text" id="prodName" placeholder="e.g. Collagen Face Mask" maxlength="60" oninput="updateCharCount('prodName','nameCount',60)" />
-          <div class="char-counter"><span id="nameCount">0</span>/60</div>
+          <input type="text" id="prodName" placeholder="e.g. Collagen Face Mask" maxlength="60" oninput="cc('prodName','nc',60)" />
+          <div class="char-count"><span id="nc">0</span>/60</div>
         </div>
-        <div class="field">
+        <div class="cf">
           <label>Category *</label>
           <select id="prodCat">
             <option value="">Select category</option>
@@ -359,11 +297,11 @@
             <option value="Other">Other</option>
           </select>
         </div>
-        <div class="field">
+        <div class="cf">
           <label>Price (Rs. PKR) *</label>
           <input type="number" id="prodPrice" placeholder="e.g. 1500" min="0" />
         </div>
-        <div class="field">
+        <div class="cf">
           <label>Stock Status</label>
           <select id="prodStock">
             <option value="In Stock">In Stock</option>
@@ -371,43 +309,46 @@
             <option value="Out of Stock">Out of Stock</option>
           </select>
         </div>
-        <div class="field full">
+        <div class="cf full">
           <label>Description</label>
-          <textarea id="prodDesc" placeholder="Brief product description..." maxlength="200" oninput="updateCharCount('prodDesc','descCount',200)"></textarea>
-          <div class="char-counter"><span id="descCount">0</span>/200</div>
+          <textarea id="prodDesc" placeholder="Brief product description..." maxlength="200" oninput="cc('prodDesc','dc',200)"></textarea>
+          <div class="char-count"><span id="dc">0</span>/200</div>
         </div>
       </div>
 
-      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem">
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.75rem">
         <button class="btn btn-rose" onclick="saveProduct()" id="saveBtn">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Save Product
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save to Cloud
         </button>
-        <button class="btn btn-ghost" onclick="clearForm()">Clear Form</button>
+        <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
       </div>
     </div>
 
-    <!-- Products List -->
+    <!-- Products list -->
     <div class="upload-card">
       <div class="card-title" style="justify-content:space-between">
         <span>🛍️ All Products</span>
         <button class="btn btn-danger btn-sm" onclick="confirmClearAll()">Delete All</button>
       </div>
-      <div class="products-list" id="productsList"></div>
+      <div class="products-list" id="productsList">
+        <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted)">
+          <div class="skeleton" style="width:80%;height:200px;margin:0 auto"></div>
+        </div>
+      </div>
     </div>
-
-  </div><!-- /admin-body -->
-</div><!-- /adminShell -->
+  </div>
+</div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Confirm Dialog -->
+<!-- Confirm dialog -->
 <div class="overlay" id="confirmOverlay">
   <div class="dialog">
     <div class="dialog-icon">🗑️</div>
     <h3 id="confirmTitle">Delete Product?</h3>
-    <p id="confirmMsg">This action cannot be undone.</p>
+    <p id="confirmMsg">This cannot be undone.</p>
     <div class="dialog-btns">
       <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
       <button class="btn btn-danger" id="confirmOk">Delete</button>
@@ -416,17 +357,74 @@
 </div>
 
 <script>
-/* ── AUTH ── */
-const PASS = 'fashion330';
-const SESSION_KEY = 'sf_admin_auth';
+/* ═══════════════════════════════════════════════════
+   CONFIG — Supabase credentials are stored in
+   localStorage after setup so they survive refreshes
+═══════════════════════════════════════════════════ */
+const STORAGE_BUCKET = 'product-images';
+const SESSION_KEY    = 'sf_admin_auth';
+const CRED_KEY       = 'sf_supabase_creds';
+const PASS           = 'fashion330';
 
+let sb = null; // Supabase client
+
+/* ── INIT ── */
+function getCredentials() {
+  try { return JSON.parse(localStorage.getItem(CRED_KEY) || 'null'); } catch { return null; }
+}
+
+function initSupabase(url, key) {
+  sb = supabase.createClient(url, key);
+}
+
+function bootApp() {
+  const creds = getCredentials();
+  if (!creds) {
+    document.getElementById('setupScreen').classList.add('show');
+    return;
+  }
+  initSupabase(creds.url, creds.key);
+
+  if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('adminShell').style.display = 'block';
+    loadAll();
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+}
+
+bootApp();
+
+/* ── SETUP ── */
+async function saveSetup() {
+  const url = document.getElementById('setupUrl').value.trim();
+  const key = document.getElementById('setupKey').value.trim();
+  if (!url || !key) { document.getElementById('setupError').classList.add('show'); return; }
+  document.getElementById('setupError').classList.remove('show');
+
+  // Test connection
+  const testClient = supabase.createClient(url, key);
+  const { error } = await testClient.from('products').select('id').limit(1);
+  if (error && error.code !== 'PGRST116') {
+    document.getElementById('setupError').textContent = `Connection failed: ${error.message}. Check URL and key.`;
+    document.getElementById('setupError').classList.add('show');
+    return;
+  }
+
+  localStorage.setItem(CRED_KEY, JSON.stringify({ url, key }));
+  document.getElementById('setupScreen').classList.remove('show');
+  document.getElementById('loginScreen').style.display = 'flex';
+  initSupabase(url, key);
+}
+
+/* ── AUTH ── */
 function doLogin() {
   const pw = document.getElementById('pwInput').value;
   if (pw === PASS) {
     sessionStorage.setItem(SESSION_KEY, '1');
     document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('adminShell').classList.add('visible');
-    refreshAll();
+    document.getElementById('adminShell').style.display = 'block';
+    loadAll();
   } else {
     document.getElementById('loginError').classList.add('show');
     document.getElementById('pwInput').value = '';
@@ -439,87 +437,67 @@ function doLogout() {
   location.reload();
 }
 
-document.getElementById('pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-document.getElementById('pwToggle').addEventListener('click', () => {
+document.getElementById('pwInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('pwToggle')?.addEventListener('click', () => {
   const inp = document.getElementById('pwInput');
   inp.type = inp.type === 'password' ? 'text' : 'password';
   document.getElementById('pwToggle').textContent = inp.type === 'password' ? '👁' : '🙈';
 });
 
-/* Auto-login if session exists */
-if (sessionStorage.getItem(SESSION_KEY) === '1') {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('adminShell').classList.add('visible');
-}
-
-/* ── STORAGE ── */
-function getProducts() {
-  try { return JSON.parse(localStorage.getItem('smartfashion_products') || '[]'); }
-  catch { return []; }
-}
-function setProducts(arr) {
-  localStorage.setItem('smartfashion_products', JSON.stringify(arr));
-  refreshAll();
-}
-
-/* ── IMAGE UPLOAD ── */
-let currentImage = null;
+/* ── IMAGE HANDLING ── */
+let currentFile = null;
 
 const fileInput   = document.getElementById('fileInput');
 const uploadArea  = document.getElementById('uploadArea');
 const previewWrap = document.getElementById('previewWrap');
 const previewImg  = document.getElementById('previewImg');
 
-fileInput.addEventListener('change', e => handleFileInput(e.target));
+fileInput?.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
 
-/* Drag & drop */
-uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-uploadArea.addEventListener('dragleave', ()  => uploadArea.classList.remove('dragover'));
-uploadArea.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadArea.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) processFile(file);
+uploadArea?.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea?.addEventListener('dragleave', ()  => uploadArea.classList.remove('dragover'));
+uploadArea?.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
 });
 
-function handleFileInput(input) {
-  const file = input.files[0];
-  if (file) processFile(file);
-}
+function handleFileFrom(input) { if (input.files[0]) processFile(input.files[0]); }
 
 function processFile(file) {
   if (!file.type.startsWith('image/')) { showToast('Please select an image file.', 'error'); return; }
-  if (file.size > 20 * 1024 * 1024) { showToast('Image too large. Max 20MB.', 'error'); return; }
+  if (file.size > 25 * 1024 * 1024) { showToast('Image too large (max 25 MB).', 'error'); return; }
 
-  const reader = new FileReader();
-  reader.onload = e => compressImage(e.target.result, 900, 0.82, b64 => {
-    currentImage = b64;
-    previewImg.src = b64;
+  compressImage(file, 1200, 0.85, blob => {
+    currentFile = blob;
+    const url = URL.createObjectURL(blob);
+    previewImg.src = url;
     previewWrap.classList.add('show');
     uploadArea.style.display = 'none';
   });
+}
+
+function compressImage(file, maxPx, quality, cb) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxPx || h > maxPx) {
+        if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else       { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      c.toBlob(cb, 'image/jpeg', quality);
+    };
+    img.src = e.target.result;
+  };
   reader.readAsDataURL(file);
 }
 
-function compressImage(src, maxPx, quality, cb) {
-  const img = new Image();
-  img.onload = () => {
-    let w = img.width, h = img.height;
-    if (w > maxPx || h > maxPx) {
-      if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
-      else        { w = Math.round(w * maxPx / h); h = maxPx; }
-    }
-    const c = document.createElement('canvas');
-    c.width = w; c.height = h;
-    c.getContext('2d').drawImage(img, 0, 0, w, h);
-    cb(c.toDataURL('image/jpeg', quality));
-  };
-  img.src = src;
-}
-
 function removeImage() {
-  currentImage = null;
+  currentFile = null;
   previewImg.src = '';
   previewWrap.classList.remove('show');
   uploadArea.style.display = '';
@@ -527,31 +505,74 @@ function removeImage() {
 }
 
 /* ── SAVE PRODUCT ── */
-function saveProduct() {
+async function saveProduct() {
   const name  = document.getElementById('prodName').value.trim();
   const cat   = document.getElementById('prodCat').value;
   const price = document.getElementById('prodPrice').value.trim();
   const desc  = document.getElementById('prodDesc').value.trim();
   const stock = document.getElementById('prodStock').value;
 
-  if (!name)  { showToast('Please enter a product name.', 'error'); return; }
-  if (!cat)   { showToast('Please select a category.', 'error'); return; }
-  if (!price) { showToast('Please enter a price.', 'error'); return; }
+  if (!name)  { showToast('Enter a product name.', 'error'); return; }
+  if (!cat)   { showToast('Select a category.', 'error'); return; }
+  if (!price) { showToast('Enter a price.', 'error'); return; }
 
-  const product = {
-    id:          Date.now().toString(),
-    name, category: cat, price, description: desc,
-    stock, image: currentImage,
-    createdAt:   new Date().toISOString()
-  };
+  const saveBtn = document.getElementById('saveBtn');
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner"></span> Saving...';
 
-  const products = getProducts();
-  products.unshift(product);
-  setProducts(products);
+  let image_url = '';
+  let image_path = '';
 
-  showToast('Product saved successfully! ✓', 'success');
-  clearForm();
+  // 1. Upload image to Supabase Storage
+  if (currentFile) {
+    setProgress('Uploading photo to cloud...', 30);
+    const ext  = 'jpg';
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data: uploadData, error: uploadError } = await sb.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, currentFile, { contentType: 'image/jpeg', upsert: false });
+
+    if (uploadError) {
+      showToast('Image upload failed: ' + uploadError.message, 'error');
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save to Cloud';
+      hideProgress();
+      return;
+    }
+
+    image_path = uploadData.path;
+    const { data: { publicUrl } } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(image_path);
+    image_url = publicUrl;
+    setProgress('Saving product details...', 70);
+  }
+
+  // 2. Insert into database
+  const { error: dbError } = await sb.from('products').insert([{ name, category: cat, price, description: desc, stock, image_url, image_path }]);
+
+  if (dbError) {
+    showToast('Save failed: ' + dbError.message, 'error');
+    // Clean up uploaded image
+    if (image_path) await sb.storage.from(STORAGE_BUCKET).remove([image_path]);
+  } else {
+    setProgress('Done!', 100);
+    setTimeout(() => {
+      hideProgress();
+      showToast('Product saved and live on your site! ✓', 'success');
+      clearForm();
+      loadAll();
+    }, 600);
+  }
+
+  saveBtn.disabled = false;
+  saveBtn.innerHTML = '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save to Cloud';
 }
+
+function setProgress(text, pct) {
+  document.getElementById('uploadProgress').classList.add('show');
+  document.getElementById('progressText').textContent = text;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+function hideProgress() { document.getElementById('uploadProgress').classList.remove('show'); }
 
 function clearForm() {
   document.getElementById('prodName').value  = '';
@@ -559,17 +580,28 @@ function clearForm() {
   document.getElementById('prodPrice').value = '';
   document.getElementById('prodDesc').value  = '';
   document.getElementById('prodStock').value = 'In Stock';
-  document.getElementById('nameCount').textContent = '0';
-  document.getElementById('descCount').textContent = '0';
+  document.getElementById('nc').textContent  = '0';
+  document.getElementById('dc').textContent  = '0';
   removeImage();
 }
 
-/* ── RENDER PRODUCTS ── */
-const EMOJI_MAP = { Mask:'🎭', Hair:'💇', 'Water Bottle':'💧', Organiser:'🗂️', Skincare:'✨', Accessories:'👜', Other:'🛍️' };
+/* ── LOAD ALL ── */
+async function loadAll() {
+  await Promise.all([fetchAndRenderProducts(), updateStats()]);
+}
 
-function renderProductsList() {
-  const list     = document.getElementById('productsList');
-  const products = getProducts();
+async function fetchAndRenderProducts() {
+  const list = document.getElementById('productsList');
+  const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
+
+  if (error) {
+    setSyncError();
+    list.innerHTML = `<div class="empty-list"><div class="e-icon">⚠️</div><p>Error loading products: ${error.message}</p></div>`;
+    return;
+  }
+
+  const products = data || [];
+  const EMOJI_MAP = { Mask:'🎭', Hair:'💇', 'Water Bottle':'💧', Organiser:'🗂️', Skincare:'✨', Accessories:'👜', Other:'🛍️' };
 
   if (!products.length) {
     list.innerHTML = `<div class="empty-list"><div class="e-icon">📭</div><p>No products yet. Add your first product above!</p></div>`;
@@ -579,40 +611,39 @@ function renderProductsList() {
   list.innerHTML = products.map(p => `
     <div class="prod-item" id="item-${p.id}">
       <div class="prod-img">
-        ${p.image ? `<img src="${p.image}" alt="${esc(p.name)}" loading="lazy" />` : EMOJI_MAP[p.category]||'🛍️'}
+        ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy"/>` : (EMOJI_MAP[p.category]||'🛍️')}
       </div>
       <div class="prod-info">
         <div class="prod-cat">${esc(p.category)}</div>
         <div class="prod-name" title="${esc(p.name)}">${esc(p.name)}</div>
         <div class="prod-price">Rs. ${esc(p.price)}</div>
-        <div style="font-size:0.68rem;color:var(--muted);margin-top:0.15rem">${esc(p.stock||'In Stock')}</div>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${esc(p.stock||'In Stock')}</div>
         <div class="prod-actions">
-          <button class="btn btn-danger btn-sm" onclick="confirmDelete('${p.id}','${esc(p.name)}')">Delete</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete('${p.id}','${esc(p.name)}','${esc(p.image_path||'')}')">Delete</button>
         </div>
       </div>
     </div>`).join('');
 }
 
-/* ── STATS ── */
-function updateStats() {
-  const products = getProducts();
-  const today    = new Date().toDateString();
-  const cats     = new Set(products.map(p => p.category)).size;
-  const todayCount = products.filter(p => new Date(p.createdAt).toDateString() === today).length;
-  document.getElementById('statTotal').textContent  = products.length;
-  document.getElementById('statCats').textContent   = cats;
-  document.getElementById('statRecent').textContent = todayCount;
+async function updateStats() {
+  const { data } = await sb.from('products').select('category, created_at');
+  if (!data) return;
+  const today = new Date().toDateString();
+  document.getElementById('statTotal').textContent  = data.length;
+  document.getElementById('statCats').textContent   = new Set(data.map(p => p.category)).size;
+  document.getElementById('statRecent').textContent = data.filter(p => new Date(p.created_at).toDateString() === today).length;
 }
 
-function refreshAll() { updateStats(); renderProductsList(); }
+function setSyncError() {
+  const dot = document.querySelector('.sync-dot');
+  if (dot) { dot.classList.add('error'); dot.nextElementSibling.textContent = 'Error'; }
+}
 
 /* ── DELETE ── */
-let pendingDeleteId = null;
-let pendingDeleteAll = false;
+let pendingDeleteId = null, pendingDeletePath = null, pendingDeleteAll = false;
 
-function confirmDelete(id, name) {
-  pendingDeleteId  = id;
-  pendingDeleteAll = false;
+function confirmDelete(id, name, imagePath) {
+  pendingDeleteId = id; pendingDeletePath = imagePath; pendingDeleteAll = false;
   document.getElementById('confirmTitle').textContent = 'Delete Product?';
   document.getElementById('confirmMsg').textContent   = `"${name}" will be permanently deleted.`;
   document.getElementById('confirmOk').onclick = executeDelete;
@@ -621,54 +652,41 @@ function confirmDelete(id, name) {
 
 function confirmClearAll() {
   pendingDeleteAll = true;
-  document.getElementById('confirmTitle').textContent = 'Delete All Products?';
-  document.getElementById('confirmMsg').textContent   = 'All products will be permanently deleted. This cannot be undone.';
+  document.getElementById('confirmTitle').textContent = 'Delete ALL Products?';
+  document.getElementById('confirmMsg').textContent   = 'All products and images will be permanently deleted.';
   document.getElementById('confirmOk').onclick = executeDelete;
   document.getElementById('confirmOverlay').classList.add('open');
 }
 
-function executeDelete() {
+async function executeDelete() {
+  closeConfirm();
   if (pendingDeleteAll) {
-    setProducts([]);
+    const { data } = await sb.from('products').select('image_path');
+    const paths = (data || []).map(p => p.image_path).filter(Boolean);
+    if (paths.length) await sb.storage.from(STORAGE_BUCKET).remove(paths);
+    await sb.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     showToast('All products deleted.', 'success');
   } else {
-    const products = getProducts().filter(p => p.id !== pendingDeleteId);
-    setProducts(products);
+    if (pendingDeletePath) await sb.storage.from(STORAGE_BUCKET).remove([pendingDeletePath]);
+    await sb.from('products').delete().eq('id', pendingDeleteId);
     showToast('Product deleted.', 'success');
   }
-  closeConfirm();
+  loadAll();
 }
 
-function closeConfirm() {
-  document.getElementById('confirmOverlay').classList.remove('open');
-  pendingDeleteId  = null;
-  pendingDeleteAll = false;
-}
+function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); }
 
-/* ── TOAST ── */
-let toastTimer = null;
+/* ── UTILS ── */
+function esc(str) { const d = document.createElement('div'); d.textContent = str||''; return d.innerHTML; }
+function cc(inputId, countId, max) { document.getElementById(countId).textContent = document.getElementById(inputId).value.length; }
+
+let toastTimer;
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast ${type} show`;
+  t.textContent = msg; t.className = `toast ${type} show`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
 }
-
-/* ── HELPERS ── */
-function esc(str) {
-  const d = document.createElement('div');
-  d.textContent = str || '';
-  return d.innerHTML;
-}
-
-function updateCharCount(inputId, counterId, max) {
-  const len = document.getElementById(inputId).value.length;
-  document.getElementById(counterId).textContent = len;
-}
-
-/* Init */
-if (sessionStorage.getItem(SESSION_KEY) === '1') refreshAll();
 </script>
 </body>
 </html>
