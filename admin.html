@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Smart Fashion</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -19,33 +18,6 @@
     }
     html { scroll-behavior: smooth; }
     body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-
-    /* ── SETUP SCREEN ── */
-    .setup-screen {
-      display: none; position: fixed; inset: 0; z-index: 2000;
-      background: linear-gradient(145deg,#FDE8F2,#FDF7F2 50%,#EDE0FF);
-      overflow-y: auto; padding: 2rem 1.5rem;
-    }
-    .setup-screen.show { display: block; }
-    .setup-card {
-      background: var(--white); border-radius: 24px; padding: 2.5rem;
-      max-width: 680px; margin: 0 auto;
-      box-shadow: 0 20px 60px rgba(212,70,122,.15); border: 1px solid var(--border);
-    }
-    .setup-card h1 { font-size: 1.4rem; font-weight: 700; color: var(--dark); margin-bottom: .4rem; }
-    .setup-card .sub { font-size: .88rem; color: var(--muted); margin-bottom: 2rem; }
-    .step-block { margin-bottom: 2rem; }
-    .step-block h3 { font-size: .95rem; font-weight: 700; color: var(--dark); margin-bottom: .6rem; display: flex; align-items: center; gap: .5rem; }
-    .step-num-sm { width: 26px; height: 26px; background: var(--rose); color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; flex-shrink: 0; }
-    .step-block p { font-size: .84rem; color: var(--muted); line-height: 1.7; margin-bottom: .5rem; }
-    .step-block a { color: var(--rose); }
-    .code-box { background: #1C0D1A; color: #F07AAC; font-family: monospace; font-size: .78rem; padding: 1rem; border-radius: 10px; margin: .6rem 0; line-height: 1.7; overflow-x: auto; white-space: pre; }
-    .field { margin-bottom: 1.1rem; }
-    .field label { display: block; font-size: .8rem; font-weight: 600; color: var(--text); margin-bottom: .4rem; }
-    .field input { width: 100%; padding: .72rem 1rem; border: 1.5px solid var(--border); border-radius: 12px; font-family: 'Poppins', sans-serif; font-size: .87rem; color: var(--text); background: var(--white); outline: none; transition: border-color .2s, box-shadow .2s; }
-    .field input:focus { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(212,70,122,.1); }
-    .setup-error { display: none; background: #FFF0F0; color: var(--danger); border: 1px solid #FECACA; border-radius: 10px; padding: .6rem 1rem; font-size: .82rem; margin-bottom: 1rem; }
-    .setup-error.show { display: block; }
 
     /* ── LOGIN ── */
     .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg,#FDE8F2,#FDF7F2 50%,#EDE0FF); padding: 1.5rem; }
@@ -163,47 +135,6 @@
   </style>
 </head>
 <body>
-
-<!-- ── SETUP SCREEN (shown when credentials not configured) ── -->
-<div class="setup-screen" id="setupScreen">
-  <div class="setup-card">
-    <div style="font-size:2.5rem;margin-bottom:.8rem">⚙️</div>
-    <h1>One-time Supabase Setup</h1>
-    <p class="sub">Your images now upload to the cloud so everyone sees them. This takes about 5 minutes and is completely free.</p>
-
-    <div class="step-block">
-      <h3><span class="step-num-sm">1</span> Create a free Supabase account</h3>
-      <p>Go to <a href="https://supabase.com" target="_blank">supabase.com</a> → click <strong>Start your project</strong> → sign up with GitHub or email.</p>
-      <p>Then create a new project. Pick any name (e.g. "smart-fashion"). Choose a strong database password and save it somewhere.</p>
-    </div>
-
-    <div class="step-block">
-      <h3><span class="step-num-sm">2</span> Run the database setup SQL</h3>
-      <p>In your Supabase dashboard, go to <strong>SQL Editor → New query</strong>, paste and run the contents of <code>setup.sql</code> (included in your project folder).</p>
-      <p>It creates the products table, enables security, and sets read/write permissions.</p>
-    </div>
-
-    <div class="step-block">
-      <h3><span class="step-num-sm">3</span> Create the image storage bucket</h3>
-      <p>Go to <strong>Storage → New bucket</strong>. Name it exactly: <code>product-images</code>. Toggle <strong>Public bucket</strong> ON. Click Save.</p>
-    </div>
-
-    <div class="step-block">
-      <h3><span class="step-num-sm">4</span> Enter your project credentials below</h3>
-      <p>In Supabase: go to <strong>Project Settings → API</strong>. Copy the <strong>Project URL</strong> and <strong>anon public</strong> key.</p>
-      <div class="setup-error" id="setupError">Please fill in both fields.</div>
-      <div class="field">
-        <label>Supabase Project URL</label>
-        <input type="text" id="setupUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" autocomplete="off" />
-      </div>
-      <div class="field">
-        <label>Supabase Anon Key</label>
-        <input type="text" id="setupKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off" />
-      </div>
-      <button class="btn btn-rose btn-full" onclick="saveSetup()">Save & Continue</button>
-    </div>
-  </div>
-</div>
 
 <!-- ── LOGIN ── -->
 <div class="login-screen" id="loginScreen" style="display:none">
@@ -357,65 +288,20 @@
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════════
-   CONFIG — Supabase credentials are stored in
-   localStorage after setup so they survive refreshes
-═══════════════════════════════════════════════════ */
-const STORAGE_BUCKET = 'product-images';
-const SESSION_KEY    = 'sf_admin_auth';
-const CRED_KEY       = 'sf_supabase_creds';
-const PASS           = 'fashion330';
+const SESSION_KEY = 'sf_admin_auth';
+const PASS        = 'fashion330';
 
-let sb = null; // Supabase client
-
-/* ── INIT ── */
-function getCredentials() {
-  try { return JSON.parse(localStorage.getItem(CRED_KEY) || 'null'); } catch { return null; }
-}
-
-function initSupabase(url, key) {
-  sb = supabase.createClient(url, key);
-}
-
+/* ── BOOT ── */
 function bootApp() {
-  const creds = getCredentials();
-  if (!creds) {
-    document.getElementById('setupScreen').classList.add('show');
-    return;
-  }
-  initSupabase(creds.url, creds.key);
-
   if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminShell').style.display = 'block';
     loadAll();
   } else {
     document.getElementById('loginScreen').style.display = 'flex';
   }
 }
-
 bootApp();
-
-/* ── SETUP ── */
-async function saveSetup() {
-  const url = document.getElementById('setupUrl').value.trim();
-  const key = document.getElementById('setupKey').value.trim();
-  if (!url || !key) { document.getElementById('setupError').classList.add('show'); return; }
-  document.getElementById('setupError').classList.remove('show');
-
-  // Test connection
-  const testClient = supabase.createClient(url, key);
-  const { error } = await testClient.from('products').select('id').limit(1);
-  if (error && error.code !== 'PGRST116') {
-    document.getElementById('setupError').textContent = `Connection failed: ${error.message}. Check URL and key.`;
-    document.getElementById('setupError').classList.add('show');
-    return;
-  }
-
-  localStorage.setItem(CRED_KEY, JSON.stringify({ url, key }));
-  document.getElementById('setupScreen').classList.remove('show');
-  document.getElementById('loginScreen').style.display = 'flex';
-  initSupabase(url, key);
-}
 
 /* ── AUTH ── */
 function doLogin() {
@@ -520,40 +406,28 @@ async function saveProduct() {
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<span class="spinner"></span> Saving...';
 
-  let image_url = '';
-  let image_path = '';
+  setProgress(currentFile ? 'Uploading photo to cloud...' : 'Saving product...', 30);
 
-  // 1. Upload image to Supabase Storage
+  let imageBase64 = null;
   if (currentFile) {
-    setProgress('Uploading photo to cloud...', 30);
-    const ext  = 'jpg';
-    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { data: uploadData, error: uploadError } = await sb.storage
-      .from(STORAGE_BUCKET)
-      .upload(path, currentFile, { contentType: 'image/jpeg', upsert: false });
-
-    if (uploadError) {
-      showToast('Image upload failed: ' + uploadError.message, 'error');
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save to Cloud';
-      hideProgress();
-      return;
-    }
-
-    image_path = uploadData.path;
-    const { data: { publicUrl } } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(image_path);
-    image_url = publicUrl;
-    setProgress('Saving product details...', 70);
+    imageBase64 = await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(currentFile);
+    });
   }
 
-  // 2. Insert into database
-  const { error: dbError } = await sb.from('products').insert([{ name, category: cat, price, description: desc, stock, image_url, image_path }]);
+  setProgress('Saving to GitHub...', 60);
 
-  if (dbError) {
-    showToast('Save failed: ' + dbError.message, 'error');
-    // Clean up uploaded image
-    if (image_path) await sb.storage.from(STORAGE_BUCKET).remove([image_path]);
-  } else {
+  const res = await fetch('/api/products', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': PASS },
+    body: JSON.stringify({ name, category: cat, price, description: desc, stock, imageBase64 })
+  });
+
+  const saveBtnHTML = '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save to Cloud';
+
+  if (res.ok) {
     setProgress('Done!', 100);
     setTimeout(() => {
       hideProgress();
@@ -561,10 +435,14 @@ async function saveProduct() {
       clearForm();
       loadAll();
     }, 600);
+  } else {
+    const err = await res.json().catch(() => ({}));
+    showToast('Save failed: ' + (err.error || res.status), 'error');
+    hideProgress();
   }
 
   saveBtn.disabled = false;
-  saveBtn.innerHTML = '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save to Cloud';
+  saveBtn.innerHTML = saveBtnHTML;
 }
 
 function setProgress(text, pct) {
@@ -587,20 +465,27 @@ function clearForm() {
 
 /* ── LOAD ALL ── */
 async function loadAll() {
-  await Promise.all([fetchAndRenderProducts(), updateStats()]);
+  await fetchAndRenderProducts();
 }
 
 async function fetchAndRenderProducts() {
   const list = document.getElementById('productsList');
-  const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
-
-  if (error) {
+  let products = [];
+  try {
+    const res = await fetch('/api/products');
+    if (!res.ok) throw new Error(res.status);
+    products = await res.json();
+  } catch (e) {
     setSyncError();
-    list.innerHTML = `<div class="empty-list"><div class="e-icon">⚠️</div><p>Error loading products: ${error.message}</p></div>`;
+    list.innerHTML = `<div class="empty-list"><div class="e-icon">⚠️</div><p>Error loading products. Check your connection.</p></div>`;
     return;
   }
 
-  const products = data || [];
+  const today = new Date().toDateString();
+  document.getElementById('statTotal').textContent  = products.length;
+  document.getElementById('statCats').textContent   = new Set(products.map(p => p.category)).size;
+  document.getElementById('statRecent').textContent = products.filter(p => new Date(p.created_at).toDateString() === today).length;
+
   const EMOJI_MAP = { Mask:'🎭', Hair:'💇', 'Water Bottle':'💧', Organiser:'🗂️', Skincare:'✨', Accessories:'👜', Other:'🛍️' };
 
   if (!products.length) {
@@ -619,19 +504,10 @@ async function fetchAndRenderProducts() {
         <div class="prod-price">Rs. ${esc(p.price)}</div>
         <div style="font-size:.68rem;color:var(--muted);margin-top:.15rem">${esc(p.stock||'In Stock')}</div>
         <div class="prod-actions">
-          <button class="btn btn-danger btn-sm" onclick="confirmDelete('${p.id}','${esc(p.name)}','${esc(p.image_path||'')}')">Delete</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete('${p.id}','${esc(p.name)}')">Delete</button>
         </div>
       </div>
     </div>`).join('');
-}
-
-async function updateStats() {
-  const { data } = await sb.from('products').select('category, created_at');
-  if (!data) return;
-  const today = new Date().toDateString();
-  document.getElementById('statTotal').textContent  = data.length;
-  document.getElementById('statCats').textContent   = new Set(data.map(p => p.category)).size;
-  document.getElementById('statRecent').textContent = data.filter(p => new Date(p.created_at).toDateString() === today).length;
 }
 
 function setSyncError() {
@@ -640,10 +516,10 @@ function setSyncError() {
 }
 
 /* ── DELETE ── */
-let pendingDeleteId = null, pendingDeletePath = null, pendingDeleteAll = false;
+let pendingDeleteId = null, pendingDeleteAll = false;
 
-function confirmDelete(id, name, imagePath) {
-  pendingDeleteId = id; pendingDeletePath = imagePath; pendingDeleteAll = false;
+function confirmDelete(id, name) {
+  pendingDeleteId = id; pendingDeleteAll = false;
   document.getElementById('confirmTitle').textContent = 'Delete Product?';
   document.getElementById('confirmMsg').textContent   = `"${name}" will be permanently deleted.`;
   document.getElementById('confirmOk').onclick = executeDelete;
@@ -661,14 +537,14 @@ function confirmClearAll() {
 async function executeDelete() {
   closeConfirm();
   if (pendingDeleteAll) {
-    const { data } = await sb.from('products').select('image_path');
-    const paths = (data || []).map(p => p.image_path).filter(Boolean);
-    if (paths.length) await sb.storage.from(STORAGE_BUCKET).remove(paths);
-    await sb.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    const res = await fetch('/api/products');
+    const products = res.ok ? await res.json() : [];
+    await Promise.all(products.map(p =>
+      fetch(`/api/products?id=${p.id}`, { method: 'DELETE', headers: { 'X-Admin-Token': PASS } })
+    ));
     showToast('All products deleted.', 'success');
   } else {
-    if (pendingDeletePath) await sb.storage.from(STORAGE_BUCKET).remove([pendingDeletePath]);
-    await sb.from('products').delete().eq('id', pendingDeleteId);
+    await fetch(`/api/products?id=${pendingDeleteId}`, { method: 'DELETE', headers: { 'X-Admin-Token': PASS } });
     showToast('Product deleted.', 'success');
   }
   loadAll();

@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -642,24 +641,7 @@
 </a>
 
 <script>
-/* ═══════════════════════════════════════════════════════════
-   SUPABASE CONFIG
-   After running admin setup, paste your credentials here
-   so the live site can load products for all visitors.
-   ─────────────────────────────────────────────────────────
-   Get these from: supabase.com → Project Settings → API
-═══════════════════════════════════════════════════════════ */
-const SUPABASE_URL      = 'YOUR_SUPABASE_URL';       // e.g. https://abcdef.supabase.co
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';  // starts with eyJ...
-const WA_NUM            = '923000000000';             // ← replace with real WhatsApp number
-
-/* ── INIT ── */
-// Also reads from localStorage so admin device works automatically during setup
-const storedCreds = (() => { try { return JSON.parse(localStorage.getItem('sf_supabase_creds')||'null'); } catch { return null; } })();
-const SB_URL  = storedCreds?.url  || SUPABASE_URL;
-const SB_KEY  = storedCreds?.key  || SUPABASE_ANON_KEY;
-const sbReady = SB_URL !== 'YOUR_SUPABASE_URL';
-const sb      = sbReady ? supabase.createClient(SB_URL, SB_KEY) : null;
+const WA_NUM = '923000000000'; // ← replace with real WhatsApp number
 
 /* ── SPARKLES ── */
 const sparklesEl = document.getElementById('sparkles');
@@ -772,28 +754,15 @@ function showSkeleton() {
     </div>`).join('');
 }
 
-/* ── LOAD FROM SUPABASE ── */
+/* ── LOAD PRODUCTS ── */
 async function loadProducts() {
-  if (!sb) {
-    // Supabase not configured yet — show empty state
-    renderProducts([]);
-    return;
-  }
-
   showSkeleton();
-
-  const { data, error } = await sb
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Failed to load products:', error.message);
-    renderProducts([]);
-    return;
+  try {
+    const res = await fetch('/api/products');
+    allProducts = res.ok ? await res.json() : [];
+  } catch {
+    allProducts = [];
   }
-
-  allProducts = data || [];
   renderProducts(allProducts);
 }
 
@@ -802,15 +771,9 @@ const shimmerStyle = document.createElement('style');
 shimmerStyle.textContent = '@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}';
 document.head.appendChild(shimmerStyle);
 
-// Initial load
+// Initial load + poll every 30s so page stays fresh when admin adds products
 loadProducts();
-
-// Real-time: when admin adds/deletes a product, page updates live
-if (sb) {
-  sb.channel('products-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadProducts())
-    .subscribe();
-}
+setInterval(loadProducts, 30000);
 
 /* ── CONTACT FORM ── */
 function submitContactForm() {
